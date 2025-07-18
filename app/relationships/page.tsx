@@ -11,17 +11,52 @@ export default function RelationshipsPage() {
   const { user } = useAuth();
   const [peopleData, setPeopleData] = useState<Array<{ person: Person; count: number }>>([]);
   const [placesData, setPlacesData] = useState<Array<{ place: Place; count: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       (async () => {
-        const people = await memoryService.getPeopleFrequency(user.uid);
-        const places = await memoryService.getPlacesFrequency(user.uid);
-        setPeopleData(people);
-        setPlacesData(places);
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const [people, places] = await Promise.all([
+            memoryService.getPeopleFrequency(user.uid),
+            memoryService.getPlacesFrequency(user.uid)
+          ]);
+          
+          setPeopleData(people);
+          setPlacesData(places);
+        } catch (err) {
+          console.error('Error fetching relationship data:', err);
+          setError('Failed to load relationship data');
+        } finally {
+          setLoading(false);
+        }
       })();
     }
   }, [user]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-gray-600">Loading relationships...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-red-600">{error}</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -41,7 +76,7 @@ export default function RelationshipsPage() {
 
             <div className="space-y-4">
               {peopleData.map((item, index) => (
-                <div key={item.person.id} className="flex items-center space-x-4">
+                <div key={item.person.id || index} className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     {index === 0 && <Award className="h-5 w-5 text-yellow-500" />}
                     {index === 1 && <Award className="h-5 w-5 text-gray-400" />}
@@ -64,7 +99,7 @@ export default function RelationshipsPage() {
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(item.count / Math.max(...peopleData.map(p => p.count))) * 100}%` }}
+                        style={{ width: `${peopleData.length > 0 ? (item.count / Math.max(...peopleData.map(p => p.count))) * 100 : 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -88,7 +123,7 @@ export default function RelationshipsPage() {
 
             <div className="space-y-4">
               {placesData.map((item, index) => (
-                <div key={item.place.id} className="flex items-center space-x-4">
+                <div key={item.place.id || index} className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     {index === 0 && <Award className="h-5 w-5 text-yellow-500" />}
                     {index === 1 && <Award className="h-5 w-5 text-gray-400" />}
@@ -111,7 +146,7 @@ export default function RelationshipsPage() {
                     <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(item.count / Math.max(...placesData.map(p => p.count))) * 100}%` }}
+                        style={{ width: `${placesData.length > 0 ? (item.count / Math.max(...placesData.map(p => p.count))) * 100 : 0}%` }}
                       ></div>
                     </div>
                   </div>

@@ -5,7 +5,7 @@ import {config} from '@/config/config';
 const API_URL = config.BACKEND_API_URL;
 
 class MemoryService {
-  async updateMemory(memoryId: string, updates: Partial<Omit<Memory, 'id' | 'createdAt'>>): Promise<Memory> {
+  async updateMemory(memoryId: string, userId: string, updates: Partial<Omit<Memory, 'id' | 'createdAt'>>): Promise<Memory> {
     // Only send fields that are defined (avoid sending undefined)
     const filteredUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, v]) => v !== undefined)
@@ -15,48 +15,51 @@ class MemoryService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(filteredUpdates),
+      body: JSON.stringify({ ...filteredUpdates, userId }),
     });
     // After updating the node, fetch the full memory object
-    const updatedMemory = await this.getMemoryById(memoryId);
+    const updatedMemory = await this.getMemoryById(memoryId, userId);
     if (!updatedMemory) {
       throw new Error(`Memory with ID ${memoryId} not found after update.`);
     }
     return updatedMemory;
   }
 
-  async deleteMemory(memoryId: string): Promise<{ message: string }> {
+  async deleteMemory(memoryId: string, userId: string): Promise<{ message: string }> {
     const response = await fetch(`${API_URL}/memory/${memoryId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
     });
     return response.json();
   }
+
   async getUserMemories(userId: string): Promise<Memory[]> {
-    const response = await fetch(`${API_URL}/memory`);
+    const response = await fetch(`${API_URL}/memory?userId=${userId}`);
     const data = await response.json();
-    return data
-      .filter((mem: any) => mem.userId === userId)
-      .map((mem: any) => {
-        // Filter out duplicate people by name
-        const uniquePeople = Array.from(
-          new Map(mem.people.map((p: any) => [p.name, { id: p.id.toString(), name: p.name }])).values()
-        );
-        // Filter out duplicate places by name
-        const uniquePlaces = Array.from(
-          new Map(mem.places.map((pl: any) => [pl.name, { id: pl.id.toString(), name: pl.name }])).values()
-        );
-        return {
-          ...mem,
-          id: mem.id.toString(),
-          people: uniquePeople,
-          places: uniquePlaces,
-          linkedMemories: mem.linkedMemories.map((lm: any) => lm.toString()),
-        };
-      });
+    return data.map((mem: any) => {
+      // Filter out duplicate people by name
+      const uniquePeople = Array.from(
+        new Map(mem.people.map((p: any) => [p.name, { id: p.id.toString(), name: p.name }])).values()
+      );
+      // Filter out duplicate places by name
+      const uniquePlaces = Array.from(
+        new Map(mem.places.map((pl: any) => [pl.name, { id: pl.id.toString(), name: pl.name }])).values()
+      );
+      return {
+        ...mem,
+        id: mem.id.toString(),
+        people: uniquePeople,
+        places: uniquePlaces,
+        linkedMemories: mem.linkedMemories.map((lm: any) => lm.toString()),
+      };
+    });
   }
 
-  async getMemoryById(memoryId: string): Promise<Memory | null> {
-    const response = await fetch(`${API_URL}/memory/${memoryId}`);
+  async getMemoryById(memoryId: string, userId: string): Promise<Memory | null> {
+    const response = await fetch(`${API_URL}/memory/${memoryId}?userId=${userId}`);
     if (!response.ok) {
       return null;
     }
@@ -102,9 +105,9 @@ class MemoryService {
     };
   }
 
-  async linkMemories(memoryId1: string, memoryId2: string): Promise<void> {
+  async linkMemories(memoryId1: string, memoryId2: string, userId: string): Promise<void> {
     // Fetch memory1 to get its current linkedMemories
-    const memory1 = await this.getMemoryById(memoryId1);
+    const memory1 = await this.getMemoryById(memoryId1, userId);
     if (!memory1) {
       console.error(`Memory with ID ${memoryId1} not found.`);
       return;
@@ -119,7 +122,7 @@ class MemoryService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ linkedMemories: updatedLinkedMemories }),
+      body: JSON.stringify({ linkedMemories: updatedLinkedMemories, userId }),
     });
   }
 

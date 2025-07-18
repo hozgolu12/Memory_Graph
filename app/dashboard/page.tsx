@@ -55,8 +55,14 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleDelete = async (id: string) => {
-    await memoryService.deleteMemory(id);
-    window.location.reload();
+    if (!user) return;
+    
+    try {
+      await memoryService.deleteMemory(id, user.uid);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting memory:', error);
+    }
   };
 
   const startEdit = (memory: Memory) => {
@@ -92,14 +98,19 @@ export default function DashboardPage() {
   };
 
   const saveEdit = async () => {
-    if (!editingId) return;
-    await memoryService.updateMemory(editingId, {
-      text: editText,
-      emotion: editEmotion as any,
-      people: editPeople.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
-      places: editPlaces.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
-    });
-    window.location.reload();
+    if (!editingId || !user) return;
+    
+    try {
+      await memoryService.updateMemory(editingId, user.uid, {
+        text: editText,
+        emotion: editEmotion as any,
+        people: editPeople.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
+        places: editPlaces.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
+      });
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating memory:', error);
+    }
   };
 
   return (
