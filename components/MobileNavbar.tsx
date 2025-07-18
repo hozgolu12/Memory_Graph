@@ -28,8 +28,7 @@ export function MobileNavbar() {
   };
 
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/dashboard", label: "Dashboard" },
+    { href: "/dashboard", label: "Home" },
     { href: "/add", label: "Add Memory" },
     { href: "/relationships", label: "Relationships" },
     { href: "/timeline", label: "Timeline" },

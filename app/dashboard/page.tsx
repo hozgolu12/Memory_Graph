@@ -9,7 +9,6 @@ import { useState, useEffect } from 'react';
 import { Calendar, Users, MapPin, Heart, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MobileNavbar } from '@/components/MobileNavbar';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -64,9 +63,10 @@ export default function DashboardPage() {
     
     try {
       await memoryService.deleteMemory(id, user.uid);
-      window.location.reload();
+      setMemories(memories.filter(m => m.id !== id));
+      setRecentMemories(recentMemories.filter(m => m.id !== id));
     } catch (error) {
-      console.error('Error deleting memory:', error);
+      // The toast is already handled in the memoryService
     }
   };
 
@@ -106,21 +106,22 @@ export default function DashboardPage() {
     if (!editingId || !user) return;
     
     try {
-      await memoryService.updateMemory(editingId, user.uid, {
+      const updatedMemory = await memoryService.updateMemory(editingId, user.uid, {
         text: editText,
         emotion: editEmotion as any,
         people: editPeople.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
         places: editPlaces.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
       });
-      window.location.reload();
+      setMemories(memories.map(m => m.id === editingId ? updatedMemory : m));
+      setRecentMemories(recentMemories.map(m => m.id === editingId ? updatedMemory : m));
+      cancelEdit();
     } catch (error) {
-      console.error('Error updating memory:', error);
+      // The toast is already handled in the memoryService
     }
   };
 
   return (
     <Layout>
-      <MobileNavbar />
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">

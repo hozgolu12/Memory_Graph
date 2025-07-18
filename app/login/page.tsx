@@ -8,20 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       if (isRegistering) {
@@ -31,7 +31,7 @@ export default function LoginPage() {
       }
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      // The toast is already handled in the AuthContext
     } finally {
       setLoading(false);
     }
@@ -82,9 +82,6 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
-            )}
             <Button 
               type="submit" 
               className="w-full bg-purple-600 hover:bg-purple-700"

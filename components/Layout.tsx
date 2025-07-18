@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { LogOut, Brain, Calendar, Users, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { MobileNavbar } from './MobileNavbar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -81,7 +82,9 @@ export default function Layout({ children }: LayoutProps) {
                 })}
               </div>
             </div>
-            {/* Hide email and logout on mobile, show only on md and up */}
+            <div className="md:hidden">
+              <MobileNavbar />
+            </div>
             <div className="hidden md:flex items-center space-x-4">
               <span className="text-sm text-gray-600">{user?.email}</span>
               <Button

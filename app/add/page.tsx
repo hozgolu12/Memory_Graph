@@ -44,7 +44,7 @@ export default function AddMemoryPage() {
       await memoryService.createMemory(memory);
       router.push('/dashboard');
     } catch (error) {
-      console.error('Error creating memory:', error);
+      // The toast is already handled in the memoryService
     } finally {
       setLoading(false);
     }

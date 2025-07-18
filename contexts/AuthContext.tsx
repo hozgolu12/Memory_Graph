@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -30,8 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+      toast({ title: 'Success', description: 'Logged in successfully.' });
+    } catch (error: any) {
       console.error('Login error:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to log in.', variant: 'destructive' });
       throw error;
     }
   };
@@ -39,8 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (email: string, password: string) => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error) {
+      toast({ title: 'Success', description: 'Registered successfully.' });
+    } catch (error: any) {
       console.error('Register error:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to register.', variant: 'destructive' });
       throw error;
     }
   };
@@ -48,8 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (error) {
+      toast({ title: 'Success', description: 'Logged out successfully.' });
+    } catch (error: any) {
       console.error('Logout error:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to log out.', variant: 'destructive' });
       throw error;
     }
   };
