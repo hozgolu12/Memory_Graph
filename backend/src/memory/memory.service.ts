@@ -176,22 +176,21 @@ export class MemoryService {
       );
     }
 
-    // Handle people relationships
     if (people) {
       await this.neo4jService.write(
         `MATCH (m:Memory {userId: $userId}) WHERE id(m) = $id
          OPTIONAL MATCH (m)-[r:INVOLVES_PERSON]->(p:Person)
-         DELETE r
-         WITH m
-         UNWIND $people AS personName
-         MERGE (p:Person {name: personName.name})
-         CREATE (m)-[:INVOLVES_PERSON]->(p)`,
-        {
-          id: parseInt(id),
-          userId,
-          people: people.map((p) => ({ name: p.name })),
-        },
+         DELETE r`,
+        { id: parseInt(id), userId },
       );
+      for (const person of people) {
+        await this.neo4jService.write(
+          `MATCH (m:Memory) WHERE id(m) = $id
+           MERGE (p:Person {name: $personName})
+           CREATE (m)-[:INVOLVES_PERSON]->(p)`,
+          { id: parseInt(id), personName: person.name },
+        );
+      }
     }
 
     // Handle places relationships
@@ -199,17 +198,17 @@ export class MemoryService {
       await this.neo4jService.write(
         `MATCH (m:Memory {userId: $userId}) WHERE id(m) = $id
          OPTIONAL MATCH (m)-[r:OCCURRED_AT]->(pl:Place)
-         DELETE r
-         WITH m
-         UNWIND $places AS placeData
-         MERGE (pl:Place {name: placeData.name})
-         CREATE (m)-[:OCCURRED_AT]->(pl)`,
-        {
-          id: parseInt(id),
-          userId,
-          places: places.map((p) => ({ name: p.name })),
-        },
+         DELETE r`,
+        { id: parseInt(id), userId },
       );
+      for (const place of places) {
+        await this.neo4jService.write(
+          `MATCH (m:Memory) WHERE id(m) = $id
+           MERGE (pl:Place {name: $placeName})
+           CREATE (m)-[:OCCURRED_AT]->(pl)`,
+          { id: parseInt(id), placeName: place.name },
+        );
+      }
     }
 
     // Handle linked memories relationships (only allow linking to memories of the same user)

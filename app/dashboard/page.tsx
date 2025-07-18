@@ -14,6 +14,7 @@ import { MobileNavbar } from '@/components/MobileNavbar';
 export default function DashboardPage() {
   const { user } = useAuth();
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [recentMemories, setRecentMemories] = useState<Memory[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [editEmotion, setEditEmotion] = useState('neutral');
@@ -30,6 +31,10 @@ export default function DashboardPage() {
     if (user) {
       memoryService.getUserMemories(user.uid).then(memories => {
         setMemories(memories);
+
+        // Get recent memories (last 10 or sorted by date)
+        const sortedMemories = memories.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRecentMemories(sortedMemories.slice(0, 10));
 
         const people = new Set(memories.flatMap(m => m.people.map(p => p.name)));
         const places = new Set(memories.flatMap(m => m.places.map(p => p.name)));
@@ -172,117 +177,121 @@ export default function DashboardPage() {
         {/* Memory Graph */}
         <MemoryGraph />
 
-        {/* Memories List */}
+        {/* Recent Memories */}
         <div className="bg-white/80 backdrop-blur-md rounded-lg p-6 border border-white/20">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Memories</h2>
-          <ul>
-            {memories.map(memory => (
-              <li key={memory.id} className="border-b py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                {editingId === memory.id ? (
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full">
-                    <Input
-                      value={editText}
-                      onChange={e => setEditText(e.target.value)}
-                    />
-                    <select
-                      className="border rounded px-2 py-1"
-                      value={editEmotion}
-                      onChange={e => setEditEmotion(e.target.value)}
-                    >
-                      <option value="joy">Joy</option>
-                      <option value="sadness">Sadness</option>
-                      <option value="love">Love</option>
-                      <option value="anger">Anger</option>
-                      <option value="fear">Fear</option>
-                      <option value="surprise">Surprise</option>
-                      <option value="neutral">Neutral</option>
-                    </select>
-                    <div className="w-full space-y-2">
-                      <label className="text-sm font-medium text-gray-700">People</label>
-                      {editPeople.map((person, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={person}
-                            onChange={(e) => updatePerson(index, e.target.value)}
-                            placeholder="Person's name"
-                          />
-                          {editPeople.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePerson(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addPerson}
-                        className="flex items-center space-x-1"
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Memories</h2>
+          {recentMemories.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No memories yet. Start by adding your first memory!</p>
+          ) : (
+            <ul>
+              {recentMemories.map(memory => (
+                <li key={memory.id} className="border-b py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  {editingId === memory.id ? (
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 w-full">
+                      <Input
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                      />
+                      <select
+                        className="border rounded px-2 py-1"
+                        value={editEmotion}
+                        onChange={e => setEditEmotion(e.target.value)}
                       >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Person</span>
-                      </Button>
+                        <option value="joy">Joy</option>
+                        <option value="sadness">Sadness</option>
+                        <option value="love">Love</option>
+                        <option value="anger">Anger</option>
+                        <option value="fear">Fear</option>
+                        <option value="surprise">Surprise</option>
+                        <option value="neutral">Neutral</option>
+                      </select>
+                      <div className="w-full space-y-2">
+                        <label className="text-sm font-medium text-gray-700">People</label>
+                        {editPeople.map((person, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Input
+                              value={person}
+                              onChange={(e) => updatePerson(index, e.target.value)}
+                              placeholder="Person's name"
+                            />
+                            {editPeople.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removePerson(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addPerson}
+                          className="flex items-center space-x-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Add Person</span>
+                        </Button>
+                      </div>
+                      <div className="w-full space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Places</label>
+                        {editPlaces.map((place, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Input
+                              value={place}
+                              onChange={(e) => updatePlace(index, e.target.value)}
+                              placeholder="Place name"
+                            />
+                            {editPlaces.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removePlace(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addPlace}
+                          className="flex items-center space-x-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Add Place</span>
+                        </Button>
+                      </div>
+                      <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={saveEdit}>Save</button>
+                      <button className="bg-gray-300 px-3 py-1 rounded" onClick={cancelEdit}>Cancel</button>
                     </div>
-                    <div className="w-full space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Places</label>
-                      {editPlaces.map((place, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={place}
-                            onChange={(e) => updatePlace(index, e.target.value)}
-                            placeholder="Place name"
-                          />
-                          {editPlaces.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePlace(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addPlace}
-                        className="flex items-center space-x-1"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Place</span>
-                      </Button>
+                  ) : (
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 w-full">
+                      <div className="flex-1">
+                        <p className="font-semibold">{memory.text}</p>
+                        <p className="text-sm text-gray-600">{memory.date} - {memory.emotion}</p>
+                        {memory.people.length > 0 && (
+                          <p className="text-sm text-blue-700">👥 {memory.people.map(p => p.name).join(', ')}</p>
+                        )}
+                        {memory.places.length > 0 && (
+                          <p className="text-sm text-green-700">📍 {memory.places.map(p => p.name).join(', ')}</p>
+                        )}
+                      </div>
+                      <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => startEdit(memory)}>Edit</button>
+                      <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDelete(memory.id)}>Delete</button>
                     </div>
-                    <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={saveEdit}>Save</button>
-                    <button className="bg-gray-300 px-3 py-1 rounded" onClick={cancelEdit}>Cancel</button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 w-full">
-                    <div className="flex-1">
-                      <p className="font-semibold">{memory.text}</p>
-                      <p className="text-sm text-gray-600">{memory.date} - {memory.emotion}</p>
-                      {memory.people.length > 0 && (
-                        <p className="text-sm text-blue-700">👥 {memory.people.map(p => p.name).join(', ')}</p>
-                      )}
-                      {memory.places.length > 0 && (
-                        <p className="text-sm text-green-700">📍 {memory.places.map(p => p.name).join(', ')}</p>
-                      )}
-                    </div>
-                    <button className="bg-blue-500 text-white px-3 py-1 rounded" onClick={() => startEdit(memory)}>Edit</button>
-                    <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => handleDelete(memory.id)}>Delete</button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </Layout>

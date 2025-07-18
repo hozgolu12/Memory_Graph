@@ -6,19 +6,14 @@ const API_URL = config.BACKEND_API_URL;
 
 class MemoryService {
   async updateMemory(memoryId: string, userId: string, updates: Partial<Omit<Memory, 'id' | 'createdAt'>>): Promise<Memory> {
-    // Only send fields that are defined (avoid sending undefined)
-    const filteredUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined)
-    );
     const response = await fetch(`${API_URL}/memory/${memoryId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...filteredUpdates, userId }),
+      body: JSON.stringify({ updateMemoryDto: updates, userId }),
     });
-    // After updating the node, fetch the full memory object
-    const updatedMemory = await this.getMemoryById(memoryId, userId);
+    const updatedMemory = await response.json();
     if (!updatedMemory) {
       throw new Error(`Memory with ID ${memoryId} not found after update.`);
     }

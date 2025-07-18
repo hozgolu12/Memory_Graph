@@ -39,9 +39,9 @@ export class MemoryController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateMemoryDto: UpdateMemoryDto,
-    @Query('userId') userId: string,
+    @Body() body: { updateMemoryDto: UpdateMemoryDto; userId: string },
   ) {
+    const { updateMemoryDto, userId } = body;
     if (!userId) {
       throw new Error('userId is required');
     }
@@ -49,7 +49,8 @@ export class MemoryController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Query('userId') userId: string) {
+  remove(@Param('id') id: string, @Body() body: { userId: string }) {
+    const { userId } = body;
     if (!userId) {
       throw new Error('userId is required');
     }
