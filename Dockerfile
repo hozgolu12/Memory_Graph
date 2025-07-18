@@ -1,0 +1,72 @@
+# Use a Node.js 18 LTS image as the base for building
+FROM node:18-alpine AS builder
+
+# Declare build arguments for Firebase environment variables
+ARG NEXT_PUBLIC_BACKEND_API_URL
+ARG NEXT_PUBLIC_FIREBASE_APIKEY
+ARG NEXT_PUBLIC_FIREBASE_AUTHDOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECTID
+ARG NEXT_PUBLIC_FIREBASE_STORAGEBUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID
+ARG NEXT_PUBLIC_FIREBASE_APPID
+ARG NEXT_PUBLIC_FIREBASE_MEASUREMENTID
+
+# Set environment variables from build arguments
+ENV NEXT_PUBLIC_BACKEND_API_URL=$NEXT_PUBLIC_BACKEND_API_URL
+ENV NEXT_PUBLIC_FIREBASE_APIKEY=$NEXT_PUBLIC_FIREBASE_APIKEY
+ENV NEXT_PUBLIC_FIREBASE_AUTHDOMAIN=$NEXT_PUBLIC_FIREBASE_AUTHDOMAIN
+ENV NEXT_PUBLIC_FIREBASE_PROJECTID=$NEXT_PUBLIC_FIREBASE_PROJECTID
+ENV NEXT_PUBLIC_FIREBASE_STORAGEBUCKET=$NEXT_PUBLIC_FIREBASE_STORAGEBUCKET
+ENV NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID=$NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID
+ENV NEXT_PUBLIC_FIREBASE_APPID=$NEXT_PUBLIC_FIREBASE_APPID
+ENV NEXT_PUBLIC_FIREBASE_MEASUREMENTID=$NEXT_PUBLIC_FIREBASE_MEASUREMENTID
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json to leverage Docker cache
+COPY package.json package-lock.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Build the Next.js application
+RUN \
+  NEXT_PUBLIC_BACKEND_API_URL=${NEXT_PUBLIC_BACKEND_API_URL} \
+  NEXT_PUBLIC_FIREBASE_APIKEY=${NEXT_PUBLIC_FIREBASE_APIKEY} \
+  NEXT_PUBLIC_FIREBASE_AUTHDOMAIN=${NEXT_PUBLIC_FIREBASE_AUTHDOMAIN} \
+  NEXT_PUBLIC_FIREBASE_PROJECTID=${NEXT_PUBLIC_FIREBASE_PROJECTID} \
+  NEXT_PUBLIC_FIREBASE_STORAGEBUCKET=${NEXT_PUBLIC_FIREBASE_STORAGEBUCKET} \
+  NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID=${NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID} \
+  NEXT_PUBLIC_FIREBASE_APPID=${NEXT_PUBLIC_FIREBASE_APPID} \
+  NEXT_PUBLIC_FIREBASE_MEASUREMENTID=${NEXT_PUBLIC_FIREBASE_MEASUREMENTID} \
+  npm run build
+
+# Use a Node.js 18 LTS image for the final stage
+FROM node:18-alpine
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json ./
+
+# Install production dependencies
+RUN npm install --production
+
+# Copy the built Next.js application from the builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Set the port Next.js will listen on
+ENV PORT 3000
+
+# Expose the port
+EXPOSE 3000
+
+# Command to start the Next.js application
+CMD ["npm", "start"]

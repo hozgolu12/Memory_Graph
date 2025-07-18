@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_API_URL: "http://localhost:3001" # Replace with your actual backend URL if different
+        NEXT_PUBLIC_FIREBASE_APIKEY: "YOUR_FIREBASE_API_KEY"
+        NEXT_PUBLIC_FIREBASE_AUTHDOMAIN: "YOUR_FIREBASE_AUTH_DOMAIN"
+        NEXT_PUBLIC_FIREBASE_PROJECTID: "YOUR_FIREBASE_PROJECT_ID"
+        NEXT_PUBLIC_FIREBASE_STORAGEBUCKET: "YOUR_FIREBASE_STORAGE_BUCKET"
+        NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID: "YOUR_FIREBASE_MESSAGING_SENDER_ID"
+        NEXT_PUBLIC_FIREBASE_APPID: "YOUR_FIREBASE_APP_ID"
+        NEXT_PUBLIC_FIREBASE_MEASUREMENTID: "YOUR_FIREBASE_MEASUREMENT_ID"
+    ports:
+      - "80:3000" # Map host port 80 to container port 3000 (Next.js default)
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: "your_database_connection_string" # Replace with your actual database URL
+      API_KEY: "your_api_key" # Replace with your actual API key
+      NEO4J_SCHEME: "neo4j" # Replace with your Neo4j scheme (e.g., "bolt", "neo4j+s")
+      NEO4J_HOST: "localhost" # Replace with your Neo4j host
+      NEO4J_PORT: "7687" # Replace with your Neo4j port
+      NEO4J_USERNAME: "neo4j" # Replace with your Neo4j username
+      NEO4J_PASSWORD: "Golu@8678" # Replace with your Neo4j password
+    ports:
+      - "3000:3000"

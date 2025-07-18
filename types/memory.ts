@@ -1,7 +1,6 @@
 export interface Memory {
   id: string;
   text: string;
-  date: string;
   emotion: EmotionType;
   userId: string;
   createdAt: string;
