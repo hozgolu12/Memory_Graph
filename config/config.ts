@@ -1,0 +1,16 @@
+export const config = {
+
+    //Backend Configuration
+
+    BACKEND_API_URL: process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001',
+
+    //Firebase Configuration
+
+    FIREBASE_APIKEY: process.env.NEXT_PUBLIC_FIREBASE_APIKEY as string,
+    FIREBASE_AUTHDOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTHDOMAIN as string,
+    FIREBASE_PROJECTID: process.env.NEXT_PUBLIC_FIREBASE_PROJECTID as string,
+    FIREBASE_STORAGEBUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGEBUCKET as string,
+    FIREBASE_MESSAGINGSENDERID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGINGSENDERID as string,
+    FIREBASE_APPID: process.env.NEXT_PUBLIC_FIREBASE_APPID as string,
+    FIREBASE_MEASUREMENTID: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENTID as string
+}
