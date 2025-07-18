@@ -1,5 +1,4 @@
 import { Memory, Person, Place } from '@/types/memory';
-import { v4 as uuidv4 } from 'uuid';
 import {config} from '@/config/config';
 import { toast } from '@/hooks/use-toast';
 

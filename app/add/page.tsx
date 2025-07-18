@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { memoryService } from '@/lib/memoryService';
+import { useMemories } from '@/contexts/MemoryContext';
 import { EmotionType, EMOTION_COLORS, EMOTION_LABELS } from '@/types/memory';
 import { Plus, X } from 'lucide-react';
 
 export default function AddMemoryPage() {
   const { user } = useAuth();
+  const { createMemory } = useMemories();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,10 +42,10 @@ export default function AddMemoryPage() {
         linkedMemories: []
       };
 
-      await memoryService.createMemory(memory);
+      await createMemory(memory);
       router.push('/dashboard');
     } catch (error) {
-      // The toast is already handled in the memoryService
+      console.error('Error creating memory:', error);
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,7 @@ export interface Memory {
   places: Place[];
   photos: Photo[];
   linkedMemories: string[];
+  date: string;
 }
 
 export interface Person {

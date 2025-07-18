@@ -1,72 +1,44 @@
 'use client';
 
-import  Layout  from '@/components/Layout';
+import Layout from '@/components/Layout';
 import MemoryGraph from '@/components/MemoryGraph';
-import { useAuth } from '@/contexts/AuthContext';
-import { memoryService } from '@/lib/memoryService';
+import { useMemories } from '@/contexts/MemoryContext';
 import { Memory } from '@/types/memory';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar, Users, MapPin, Heart, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [memories, setMemories] = useState<Memory[]>([]);
-  const [recentMemories, setRecentMemories] = useState<Memory[]>([]);
+  const { memories, stats, loading, error, updateMemory, deleteMemory } = useMemories();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [editEmotion, setEditEmotion] = useState('neutral');
   const [editPeople, setEditPeople] = useState<string[]>([]);
   const [editPlaces, setEditPlaces] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    totalMemories: 0,
-    totalPeople: 0,
-    totalPlaces: 0,
-    mostCommonEmotion: 'neutral'
-  });
 
-  useEffect(() => {
-    if (user) {
-      memoryService.getUserMemories(user.uid).then(memories => {
-        setMemories(memories);
-
-        // Get recent memories (last 10 or sorted by date)
-        const sortedMemories = memories.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setRecentMemories(sortedMemories.slice(0, 10));
-
-        const people = new Set(memories.flatMap(m => m.people.map(p => p.name)));
-        const places = new Set(memories.flatMap(m => m.places.map(p => p.name)));
-
-        const emotionCount = memories.reduce((acc, memory) => {
-          acc[memory.emotion] = (acc[memory.emotion] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        const mostCommonEmotion = Object.entries(emotionCount).reduce(
-          (max, [emotion, count]) => count > max.count ? { emotion, count } : max,
-          { emotion: 'neutral', count: 0 }
-        ).emotion;
-
-        setStats({
-          totalMemories: memories.length,
-          totalPeople: people.size,
-          totalPlaces: places.size,
-          mostCommonEmotion
-        });
-      });
-    }
-  }, [user]);
+  // Get recent memories (last 10 or sorted by date)
+  const recentMemories = memories
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
 
   const handleDelete = async (id: string) => {
-    if (!user) return;
-    
-    try {
-      await memoryService.deleteMemory(id, user.uid);
-      setMemories(memories.filter(m => m.id !== id));
-      setRecentMemories(recentMemories.filter(m => m.id !== id));
-    } catch (error) {
-      // The toast is already handled in the memoryService
+    if (window.confirm('Are you sure you want to delete this memory?')) {
+      try {
+        await deleteMemory(id);
+        toast({
+          title: "Memory deleted.",
+          description: "Your memory has been successfully deleted.",
+        });
+      } catch (error) {
+        console.error('Error deleting memory:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete memory.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -103,22 +75,49 @@ export default function DashboardPage() {
   };
 
   const saveEdit = async () => {
-    if (!editingId || !user) return;
+    if (!editingId) return;
     
     try {
-      const updatedMemory = await memoryService.updateMemory(editingId, user.uid, {
+      await updateMemory(editingId, {
         text: editText,
         emotion: editEmotion as any,
         people: editPeople.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
         places: editPlaces.filter(p => p.trim()).map(name => ({ id: '', name: name.trim() })),
       });
-      setMemories(memories.map(m => m.id === editingId ? updatedMemory : m));
-      setRecentMemories(recentMemories.map(m => m.id === editingId ? updatedMemory : m));
       cancelEdit();
+      toast({
+        title: "Memory updated.",
+        description: "Your memory has been successfully updated.",
+      });
     } catch (error) {
-      // The toast is already handled in the memoryService
+      console.error('Error updating memory:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update memory.",
+        variant: "destructive",
+      });
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-gray-600">Loading memories...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-red-600">{error}</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

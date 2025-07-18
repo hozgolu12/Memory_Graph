@@ -1,42 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { useAuth } from '@/contexts/AuthContext';
-import { memoryService } from '@/lib/memoryService';
-import { Person, Place } from '@/types/memory';
+import { useMemories } from '@/contexts/MemoryContext';
 import { Users, MapPin, Award } from 'lucide-react';
 
 export default function RelationshipsPage() {
-  const { user } = useAuth();
-  const [peopleData, setPeopleData] = useState<Array<{ person: Person; count: number }>>([]);
-  const [placesData, setPlacesData] = useState<Array<{ place: Place; count: number }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      (async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          
-          const [people, places] = await Promise.all([
-            memoryService.getPeopleFrequency(user.uid),
-            memoryService.getPlacesFrequency(user.uid)
-          ]);
-          
-          setPeopleData(people);
-          setPlacesData(places);
-        } catch (err) {
-          console.error('Error fetching relationship data:', err);
-          setError('Failed to load relationship data');
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
-  }, [user]);
+  const { peopleData, placesData, loading, error } = useMemories();
 
   if (loading) {
     return (

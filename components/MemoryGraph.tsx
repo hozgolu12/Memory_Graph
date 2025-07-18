@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { Memory, EMOTION_COLORS } from '@/types/memory';
-import { memoryService } from '@/lib/memoryService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMemories } from '@/contexts/MemoryContext';
+import { toast } from '@/hooks/use-toast';
 
 interface Node {
   id: string;
@@ -18,14 +18,14 @@ interface Edge {
   target: string;
 }
 
-export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any } = {}) {
+export default function MemoryGraph() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100%
   const GRAPH_BASE_WIDTH = 1600; // Base width for the graph area
   const GRAPH_BASE_HEIGHT = 1200; // Base height for the graph area
   const GRAPH_WIDTH = GRAPH_BASE_WIDTH * zoomLevel;
   const GRAPH_HEIGHT = GRAPH_BASE_HEIGHT * zoomLevel;
-  const { user } = useAuth();
+  const { memories, updateMemory, deleteMemory, loading, error, refreshMemories } = useMemories();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
@@ -126,17 +126,11 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
     setEdges(newEdges);
   }, [GRAPH_WIDTH, GRAPH_HEIGHT]);
 
-  const refreshGraph = useCallback(() => {
-    if (user) {
-      memoryService.getUserMemories(user.uid).then(userMemories => {
-        generateNodesAndEdges(userMemories);
-      });
-    }
-  }, [user, generateNodesAndEdges]);
-
   useEffect(() => {
-    refreshGraph();
-  }, [user, refreshTrigger, refreshGraph]);
+    if (memories.length > 0) {
+      generateNodesAndEdges(memories);
+    }
+  }, [memories, generateNodesAndEdges]);
 
   const handleNodeClick = (memory: Memory) => {
     setSelectedMemory(memory);
@@ -149,20 +143,22 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
   };
 
   const handleSave = async () => {
-    if (!editedMemory || !user) return;
+    if (!editedMemory) return;
 
     setIsLoading(true);
     try {
-      await memoryService.updateMemory(editedMemory.id, user.uid, {
+      await updateMemory(editedMemory.id, {
         text: editedMemory.text,
         emotion: editedMemory.emotion,
-        date: editedMemory.date,
         people: editedMemory.people,
         places: editedMemory.places,
       });
       setSelectedMemory(editedMemory);
       setIsEditing(false);
-      refreshGraph(); // Refresh the graph to show updated data
+      toast({
+        title: "Memory updated.",
+        description: "Your memory has been successfully updated.",
+      });
     } catch (error) {
       console.error('Error updating memory:', error);
       alert('Failed to update memory. Please try again.');
@@ -172,20 +168,28 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
   };
 
   const handleDelete = async () => {
-    if (!selectedMemory || !user) return;
+    if (!selectedMemory) return;
 
     const confirmed = window.confirm('Are you sure you want to delete this memory? This action cannot be undone.');
     if (!confirmed) return;
 
     setIsLoading(true);
     try {
-      await memoryService.deleteMemory(selectedMemory.id, user.uid);
+      await deleteMemory(selectedMemory.id);
       setSelectedMemory(null);
       setIsEditing(false);
-      refreshGraph(); // Refresh the graph to remove the deleted node
+      toast({
+        title: "Memory deleted.",
+        description: "Your memory has been successfully deleted.",
+      });
     } catch (error) {
       console.error('Error deleting memory:', error);
       alert('Failed to delete memory. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to delete memory.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -201,6 +205,22 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
     setEditedMemory(null);
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-lg text-gray-600">Loading graph...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-lg text-red-600">Error loading graph: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="bg-white/80 backdrop-blur-md rounded-lg border border-white/20 p-6 h-[600px] relative">
@@ -255,7 +275,7 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
               }}
             >
               <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 border-2 border-white/50 shadow-lg">
-                <div className="text-xs text-gray-500 mb-2">{node.data.memory.date}</div>
+                
                 <div className="text-sm font-medium text-gray-900 mb-2 line-clamp-3">
                   {node.data.memory.text}
                 </div>
@@ -289,20 +309,7 @@ export default function MemoryGraph({ refreshTrigger }: { refreshTrigger?: any }
             </div>
             
             <div className="space-y-4">
-              <div>
-                <span className="text-sm font-medium text-gray-700">Date:</span>
-                {isEditing ? (
-                  <input
-                    type="date"
-                    value={editedMemory?.date || ''}
-                    onChange={(e) => setEditedMemory(prev => prev ? { ...prev, date: e.target.value } : null)}
-                    className="ml-2 text-sm border rounded px-2 py-1"
-                    disabled={isLoading}
-                  />
-                ) : (
-                  <span className="ml-2 text-sm text-gray-900">{selectedMemory.date}</span>
-                )}
-              </div>
+              
               
               <div>
                 <span className="text-sm font-medium text-gray-700">Emotion:</span>

@@ -1,23 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { memoryService } from '@/lib/memoryService';
-import { Memory, EMOTION_COLORS } from '@/types/memory';
+import { useMemories } from '@/contexts/MemoryContext';
+import { EMOTION_COLORS } from '@/types/memory';
 import { format } from 'date-fns';
 import Layout from '@/components/Layout';
 
 export default function TimelinePage() {
-  const { user } = useAuth();
-  const [memories, setMemories] = useState<Memory[]>([]);
+  const { memories, loading, error } = useMemories();
 
-  useEffect(() => {
-    if (user) {
-      memoryService.getTimelineData(user.uid).then(timelineData => {
-        setMemories(timelineData);
-      });
-    }
-  }, [user]);
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-gray-600">Loading memories...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-64">
+          <div className="text-lg text-red-600">{error}</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
       <Layout>
@@ -46,7 +55,7 @@ export default function TimelinePage() {
                 <div className="flex-1 bg-white/80 backdrop-blur-md rounded-lg p-6 border border-white/20 shadow-lg">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {format(new Date(memory.date), 'MMMM d, yyyy')}
+                      {format(new Date(memory.date), 'MMMM d, yyyy h:mm a')}
                     </h3>
                     <span 
                       className="px-3 py-1 rounded-full text-sm font-medium"
@@ -100,3 +109,4 @@ export default function TimelinePage() {
     </Layout>
   );
 }
+
