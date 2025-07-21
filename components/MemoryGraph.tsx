@@ -310,6 +310,12 @@ export default function MemoryGraph() {
             
             <div className="space-y-4">
               
+              <div>
+                <span className="text-sm font-medium text-gray-700">Date:</span>
+                <span className="ml-2 text-sm text-gray-900">
+                  {new Date(selectedMemory.date).toLocaleDateString()}
+                </span>
+              </div>
               
               <div>
                 <span className="text-sm font-medium text-gray-700">Emotion:</span>

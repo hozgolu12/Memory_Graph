@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     <div className="flex flex-col md:flex-row md:items-center gap-2 w-full">
                       <div className="flex-1">
                         <p className="font-semibold">{memory.text}</p>
-                        <p className="text-sm text-gray-600">{memory.date} - {memory.emotion}</p>
+                        <p className="text-sm text-gray-600">{new Date(memory.date).toLocaleDateString()} - {memory.emotion}</p>
                         {memory.people.length > 0 && (
                           <p className="text-sm text-blue-700">👥 {memory.people.map(p => p.name).join(', ')}</p>
                         )}
